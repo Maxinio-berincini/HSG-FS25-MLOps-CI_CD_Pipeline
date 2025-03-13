@@ -56,7 +56,7 @@ jobs:
       - name: Download Trained Model Artifact
         uses: actions/download-artifact@v4
         with:
-          name: model
+          name: trained-model
           path: model_artifacts/
 
       - name: Deploy to Hugging Face
