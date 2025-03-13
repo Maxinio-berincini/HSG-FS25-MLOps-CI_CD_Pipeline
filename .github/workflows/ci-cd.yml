@@ -8,7 +8,7 @@ on:
 jobs:
   train:
     name: Train Model
-    runs-on: [self-hosted, max-pc]  # run on max pc for gpu usage
+    runs-on: [self-hosted, max-pc-runner]  # run on max pc for gpu usage
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
