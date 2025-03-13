@@ -11,7 +11,7 @@ jobs:
     runs-on: [self-hosted, max-pc]  # run on max pc for gpu usage
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -28,7 +28,7 @@ jobs:
           python train.py
 
       - name: Upload Trained Model Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: trained-model
           path: model_artifacts/model.pt
@@ -53,7 +53,7 @@ jobs:
           pip install huggingface_hub
 
       - name: Download Trained Model Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: model
           path: model_artifacts/
