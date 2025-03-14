@@ -2,7 +2,6 @@ from huggingface_hub import HfApi
 import os
 
 HF_REPO_ID = "Maxinio-Berincini/HSG-FS25-MLOps-CI_CD_Pipeline"
-MODEL_FILE = "model_artifacts/model.pt"
 HF_TOKEN = os.environ["HF_TOKEN"]
 
 api = HfApi()
