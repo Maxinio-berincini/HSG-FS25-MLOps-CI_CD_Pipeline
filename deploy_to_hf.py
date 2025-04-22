@@ -9,7 +9,7 @@ api = HfApi()
 files_to_upload = {
     "app.py": "app.py",
     "model.py": "model.py",
-    "model_artifacts/model.pt": "model.pt"
+    "model_artifacts/model.pt": "model_artifacts/model.pt"
 }
 
 for local_path, repo_path in files_to_upload.items():
