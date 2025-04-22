@@ -1,12 +1,27 @@
 import time
+import os
 import torch
 import torch.optim as optim
 from torch.optim.lr_scheduler import _LRScheduler
 from tqdm.notebook import tqdm, trange
+import mlflow
+import mlflow.pytorch
+import logging
+
+# MLflow setup
+from dotenv import load_dotenv
+load_dotenv()
+
+mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
+mlflow.set_experiment("alexnet_experiment")
 
 from data_utils import train_iterator, valid_iterator, test_iterator
 from model import AlexNet, count_parameters, initialize_parameters
 import torch.nn as nn
+
+os.makedirs("model_artifacts", exist_ok=True)
+
+logging.getLogger("mlflow").setLevel(logging.DEBUG)
 
 class ExponentialLR(_LRScheduler):
     def __init__(self, optimizer, end_lr, num_iter, last_epoch=-1):
@@ -90,6 +105,7 @@ def evaluate(model, iterator, criterion, device):
 
     return epoch_loss / len(iterator), epoch_acc / len(iterator)
 
+
 def epoch_time(start_time, end_time):
     elapsed_time = end_time - start_time
     elapsed_mins = int(elapsed_time / 60)
@@ -117,27 +133,59 @@ def main():
     EPOCHS = 25
     best_valid_loss = float('inf')
 
-    for epoch in trange(EPOCHS, desc="Epochs"):
-        start_time = time.monotonic()
+    # Start MLflow run
+    with mlflow.start_run(run_name="alexnet_run"):
 
-        train_loss, train_acc = train(model, train_iterator, optimizer, criterion, device)
-        valid_loss, valid_acc = evaluate(model, valid_iterator, criterion, device)
+        print("ARTIFACT URI:", mlflow.get_artifact_uri())
 
-        if valid_loss < best_valid_loss:
-            best_valid_loss = valid_loss
-            torch.save(model.state_dict(), 'model_artifacts/model.pt')
+        # Log hyperparameters
+        mlflow.log_param("epochs", EPOCHS)
+        mlflow.log_param("learning_rate", FOUND_LR)
+        mlflow.log_param("optimizer", "Adam")
+        mlflow.log_param("batch_size", train_iterator.batch_size)
 
-        end_time = time.monotonic()
-        epoch_mins, epoch_secs = epoch_time(start_time, end_time)
+        for epoch in trange(EPOCHS, desc="Epochs"):
+            start_time = time.monotonic()
 
-        print(f'Epoch: {epoch+1:02} | Epoch Time: {epoch_mins}m {epoch_secs}s')
-        print(f'\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc*100:.2f}%')
-        print(f'\t Val. Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc*100:.2f}%')
+            train_loss, train_acc = train(model, train_iterator, optimizer, criterion, device)
+            valid_loss, valid_acc = evaluate(model, valid_iterator, criterion, device)
 
-    # Load best model and evaluate on test
-    model.load_state_dict(torch.load('model_artifacts/model.pt'))
-    test_loss, test_acc = evaluate(model, test_iterator, criterion, device)
-    print(f'Test Loss: {test_loss:.3f} | Test Acc: {test_acc*100:.2f}%')
+            # Log metrics for this epoch
+            mlflow.log_metric("train_loss", train_loss, step=epoch)
+            mlflow.log_metric("train_acc", train_acc, step=epoch)
+            mlflow.log_metric("valid_loss", valid_loss, step=epoch)
+            mlflow.log_metric("valid_acc", valid_acc, step=epoch)
+
+            # Save & log best model
+            if valid_loss < best_valid_loss:
+                best_valid_loss = valid_loss
+
+                # torch.save(model.state_dict(), "model_artifacts/model.pt")
+                # mlflow.log_artifact("model_artifacts/model.pt", artifact_path="models/best")
+
+                model_path = "model_artifacts/model.pt"
+                torch.save(model.state_dict(), model_path)
+                # then upload that one file
+                mlflow.log_artifact(model_path, artifact_path="models/best")
+
+            end_time = time.monotonic()
+            epoch_mins, epoch_secs = epoch_time(start_time, end_time)
+            print(f'Epoch: {epoch + 1:02} | Time: {epoch_mins}m {epoch_secs}s')
+            print(f"\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc * 100:.2f}%")
+            print(f"\t Val. Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc * 100:.2f}%")
+
+        # Evaluate on test set
+        model.load_state_dict(torch.load('model_artifacts/model.pt'))
+        test_loss, test_acc = evaluate(model, test_iterator, criterion, device)
+        print(f'Test Loss: {test_loss:.3f} | Test Acc: {test_acc * 100:.2f}%')
+
+        # Log test metrics
+        mlflow.log_metric("test_loss", test_loss)
+        mlflow.log_metric("test_acc", test_acc)
+
+        # Log the final model
+        mlflow.pytorch.log_model(model, artifact_path="models/final")
+
 
 if __name__ == "__main__":
     main()
