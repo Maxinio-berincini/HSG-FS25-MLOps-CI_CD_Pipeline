@@ -13,15 +13,19 @@ from dotenv import load_dotenv
 load_dotenv()
 
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
-mlflow.set_experiment("alexnet_experiment")
+mlflow.set_experiment("alexnet_experiment_with_artifact_upload")
+
+
+os.makedirs("model_artifacts", exist_ok=True)
+
+logging.getLogger("mlflow").setLevel(logging.DEBUG)
+
 
 from data_utils import train_iterator, valid_iterator, test_iterator
 from model import AlexNet, count_parameters, initialize_parameters
 import torch.nn as nn
 
-os.makedirs("model_artifacts", exist_ok=True)
 
-logging.getLogger("mlflow").setLevel(logging.DEBUG)
 
 class ExponentialLR(_LRScheduler):
     def __init__(self, optimizer, end_lr, num_iter, last_epoch=-1):
