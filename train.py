@@ -20,12 +20,20 @@ from model import AlexNet, count_parameters, initialize_parameters
 # load env variables
 load_dotenv()
 
+# set global experiment config
+EXPERIMENT_NAME = os.getenv("MLFLOW_EXPERIMENT_NAME", "alexnet_auto_deploy_test-4")
+REGISTERED_MODEL_NAME = os.getenv("MLFLOW_MODEL_NAME", "alexnet_model-4")
+RUN_NAME = os.getenv("MLFLOW_RUN_NAME", "challenger")
+CHALLENGER_ALIAS = os.getenv("MLFLOW_CHALLENGER_ALIAS", "challenger")
+CONDA_ENV_FILE = os.getenv("CONDA_ENV_FILE", "environment.yml")
+ARTIFACT_DIR = "model_artifacts"
+
 # configure MLflow
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
-mlflow.set_experiment("alexnet_auto_deploy_test-3")
+mlflow.set_experiment(EXPERIMENT_NAME)
 
 # ensure the model_artifacts directory exists
-os.makedirs("model_artifacts", exist_ok=True)
+os.makedirs(ARTIFACT_DIR, exist_ok=True)
 
 # set up logging
 logging.getLogger("mlflow").setLevel(logging.INFO)
@@ -147,7 +155,7 @@ def main():
     best_model_path = None
 
     # Start MLflow run
-    with mlflow.start_run(run_name="challenger") as run:
+    with mlflow.start_run(run_name=RUN_NAME) as run:
         run_id = run.info.run_id
 
         # Log hyperparameters
@@ -173,7 +181,7 @@ def main():
             # Save best model checkpoint
             if valid_loss < best_valid_loss:
                 best_valid_loss = valid_loss
-                best_model_path = "model_artifacts/best_model.pt"
+                best_model_path = os.path.join(ARTIFACT_DIR, "best_model.pt")
                 torch.save(model.state_dict(), best_model_path)
 
             # print progress
@@ -202,18 +210,21 @@ def main():
         mlflow.pytorch.log_model(
             model,
             artifact_path="models/challenger",
-            registered_model_name="alexnet_model-2",
+            registered_model_name=REGISTERED_MODEL_NAME,
             signature=signature,
             input_example=input_example,
-            conda_env="environment.yml",
+            conda_env=CONDA_ENV_FILE,
         )
 
         # alias version as challenger
         client = MlflowClient()
-        filter_str = f"name = 'alexnet_model-2' and run_id = '{run_id}'"
+        filter_str = f"name = '{REGISTERED_MODEL_NAME}' and run_id = '{run_id}'"
         version = client.search_model_versions(filter_str)[0].version
-        client.set_registered_model_alias("alexnet_model-2", "challenger", version)
-        print(f"Logged and aliased version {version} as 'challenger'.")
+        client.set_registered_model_alias(
+            name=REGISTERED_MODEL_NAME,
+            alias=CHALLENGER_ALIAS,
+            version=version)
+        print(f"Logged and aliased version {version} as {CHALLENGER_ALIAS}.")
 
         # evaluation on test set
         test_loss, test_acc = evaluate(model, test_iterator, criterion, device)
