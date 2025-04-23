@@ -7,8 +7,9 @@ import mlflow.pytorch
 import torch
 import torch.nn as nn
 import torch.optim as optim
-# load env variables
 from dotenv import load_dotenv
+from mlflow.models.signature import infer_signature
+from mlflow.tracking import MlflowClient
 from torch.optim.lr_scheduler import _LRScheduler
 from tqdm.notebook import tqdm, trange
 
@@ -16,6 +17,7 @@ from tqdm.notebook import tqdm, trange
 from data_utils import train_iterator, valid_iterator, test_iterator
 from model import AlexNet, count_parameters, initialize_parameters
 
+# load env variables
 load_dotenv()
 
 # configure MLflow
@@ -131,7 +133,6 @@ def main():
     model.apply(initialize_parameters)
     print(f'The model has {count_parameters(model):,} trainable parameters')
 
-
     # setup device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     criterion = nn.CrossEntropyLoss()
@@ -143,14 +144,11 @@ def main():
     # train loop variables
     EPOCHS = 2
     best_valid_loss = float('inf')
+    best_model_path = None
 
     # Start MLflow run
     with mlflow.start_run(run_name="challenger") as run:
-
         run_id = run.info.run_id
-        mlflow.set_tag("stage", "challenger")
-
-        print("ARTIFACT URI:", mlflow.get_artifact_uri())
 
         # Log hyperparameters
         mlflow.log_param("epochs", EPOCHS)
@@ -158,9 +156,11 @@ def main():
         mlflow.log_param("optimizer", "Adam")
         mlflow.log_param("batch_size", train_iterator.batch_size)
 
+        # iterate over epochs
         for epoch in trange(EPOCHS, desc="Epochs"):
             start_time = time.monotonic()
 
+            # train and validate
             train_loss, train_acc = train(model, train_iterator, optimizer, criterion, device)
             valid_loss, valid_acc = evaluate(model, valid_iterator, criterion, device)
 
@@ -170,35 +170,58 @@ def main():
             mlflow.log_metric("valid_loss", valid_loss, step=epoch)
             mlflow.log_metric("valid_acc", valid_acc, step=epoch)
 
-            # Save & log best model
+            # Save best model checkpoint
             if valid_loss < best_valid_loss:
                 best_valid_loss = valid_loss
+                best_model_path = "model_artifacts/best_model.pt"
+                torch.save(model.state_dict(), best_model_path)
 
-                # torch.save(model.state_dict(), "model_artifacts/model.pt")
-                # mlflow.log_artifact("model_artifacts/model.pt", artifact_path="models/best")
-
-                model_path = "model_artifacts/model.pt"
-                torch.save(model.state_dict(), model_path)
-                # upload one file
-                mlflow.log_artifact(model_path, artifact_path="models/best")
-
+            # print progress
             end_time = time.monotonic()
             epoch_mins, epoch_secs = epoch_time(start_time, end_time)
             print(f'Epoch: {epoch + 1:02} | Time: {epoch_mins}m {epoch_secs}s')
             print(f"\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc * 100:.2f}%")
             print(f"\t Val. Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc * 100:.2f}%")
 
-        # Evaluate on test set
-        model.load_state_dict(torch.load('model_artifacts/model.pt'))
+        # after training ensure checkpoint exists
+        if best_model_path is None:
+            raise RuntimeError("Training did not produce a best model checkpoint")
+
+        # load best model for evaluation
+        model.load_state_dict(torch.load(best_model_path))
+        model.to(device).eval()
+
+        # prepare input example for mlflow signature
+        sample_input, _ = next(iter(valid_iterator))
+        input_example = sample_input[0:1].cpu().numpy()
+        with torch.no_grad():
+            output_example = model(sample_input.to(device))[0][0:1].cpu().numpy()
+        signature = infer_signature(input_example, output_example)
+
+        # Log final model
+        mlflow.pytorch.log_model(
+            model,
+            artifact_path="models/challenger",
+            registered_model_name="alexnet_model-2",
+            signature=signature,
+            input_example=input_example,
+            conda_env="environment.yml",
+        )
+
+        # alias version as challenger
+        client = MlflowClient()
+        filter_str = f"name = 'alexnet_model-2' and run_id = '{run_id}'"
+        version = client.search_model_versions(filter_str)[0].version
+        client.set_registered_model_alias("alexnet_model-2", "challenger", version)
+        print(f"Logged and aliased version {version} as 'challenger'.")
+
+        # evaluation on test set
         test_loss, test_acc = evaluate(model, test_iterator, criterion, device)
         print(f'Test Loss: {test_loss:.3f} | Test Acc: {test_acc * 100:.2f}%')
 
         # Log test metrics
         mlflow.log_metric("test_loss", test_loss)
         mlflow.log_metric("test_acc", test_acc)
-
-        # Log the final model
-        mlflow.pytorch.log_model(model, artifact_path="models/final")
 
 
 if __name__ == "__main__":
