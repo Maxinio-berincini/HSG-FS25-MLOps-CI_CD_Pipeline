@@ -19,3 +19,6 @@ PRODUCTION_ALIAS = os.getenv("MLFLOW_PRODUCTION_ALIAS", "production")
 # environment spec and directories
 CONDA_ENV_FILE = os.getenv("CONDA_ENV_FILE", "environment.yml")
 ARTIFACT_DIR = os.getenv("ARTIFACT_DIR", "model_artifacts")
+
+# Hugging Face repo
+HF_REPO_ID = os.getenv("HF_REPO_ID", "Maxinio-Berincini/HSG-FS25-MLOps-CI_CD_Pipeline")
