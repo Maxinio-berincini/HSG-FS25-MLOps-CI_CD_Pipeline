@@ -212,7 +212,6 @@ def main():
             artifact_path="models/challenger",
             registered_model_name=REGISTERED_MODEL_NAME,
             signature=signature,
-            input_example=input_example,
             conda_env=CONDA_ENV_FILE,
         )
 
