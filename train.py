@@ -7,26 +7,23 @@ import mlflow.pytorch
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from dotenv import load_dotenv
 from mlflow.models.signature import infer_signature
 from mlflow.tracking import MlflowClient
 from torch.optim.lr_scheduler import _LRScheduler
 from tqdm.notebook import tqdm, trange
 
+# load config
+from config import (
+    EXPERIMENT_NAME,
+    REGISTERED_MODEL_NAME,
+    RUN_NAME,
+    CHALLENGER_ALIAS,
+    CONDA_ENV_FILE,
+    ARTIFACT_DIR,
+)
 # import data iterator and model
 from data_utils import train_iterator, valid_iterator, test_iterator
 from model import AlexNet, count_parameters, initialize_parameters
-
-# load env variables
-load_dotenv()
-
-# set global experiment config
-EXPERIMENT_NAME = os.getenv("MLFLOW_EXPERIMENT_NAME", "alexnet_auto_deploy_test-4")
-REGISTERED_MODEL_NAME = os.getenv("MLFLOW_MODEL_NAME", "alexnet_model-4")
-RUN_NAME = os.getenv("MLFLOW_RUN_NAME", "challenger")
-CHALLENGER_ALIAS = os.getenv("MLFLOW_CHALLENGER_ALIAS", "challenger")
-CONDA_ENV_FILE = os.getenv("CONDA_ENV_FILE", "environment.yml")
-ARTIFACT_DIR = "model_artifacts"
 
 # configure MLflow
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
