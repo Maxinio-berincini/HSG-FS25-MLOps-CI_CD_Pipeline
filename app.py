@@ -1,12 +1,19 @@
 import gradio as gr
 import torch
 import torchvision.transforms as T
+from torch.nn import Sequential
+from torch.serialization import add_safe_globals
+
 from model import AlexNet
 
+add_safe_globals([AlexNet, Sequential])
+
 # load model
-OUTPUT_DIM = 10
-model = AlexNet(OUTPUT_DIM)
-model.load_state_dict(torch.load("model_artifacts/model.pt", map_location=torch.device("cpu")))
+model = torch.load(
+    "model_artifacts/model.pth",
+    map_location=torch.device("cpu"),
+    weights_only=False
+)
 model.eval()
 
 # CIFAR-10 classes
@@ -23,6 +30,7 @@ transform = T.Compose([
     T.Normalize(mean=[0.4914, 0.4822, 0.4465],
                 std=[0.2470, 0.2435, 0.2616])
 ])
+
 
 def predict_image(image):
     image = transform(image).unsqueeze(0)
