@@ -147,7 +147,7 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=FOUND_LR)
 
     # train loop variables
-    EPOCHS = 2
+    EPOCHS = 3
     best_valid_loss = float('inf')
     best_model_path = None
 
