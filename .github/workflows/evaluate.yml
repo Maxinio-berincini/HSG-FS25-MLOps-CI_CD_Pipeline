@@ -1,0 +1,37 @@
+name: Evaluate Model
+
+on:
+  repository_dispatch:
+    types: [mlflow-model-logged] # trigger on model logging from n8n
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Evaluation Script
+        env:
+          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+        run: |
+          python evaluate_and_promote.py
+        continue-on-error: true
+        id: eval_step
+
+      - name: Trigger Deployment if Promoted
+        if: steps.eval_step.outcome == 'success'
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.PAT }}
+          repository: ${{ github.repository }}
+          event-type: trigger-deployment
