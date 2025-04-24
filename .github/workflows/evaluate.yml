@@ -1,6 +1,7 @@
 name: Evaluate Model
 
 on:
+  workflow_dispatch: {}
   repository_dispatch:
     types: [mlflow-model-logged] # trigger on model logging from n8n
 
