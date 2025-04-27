@@ -38,6 +38,10 @@ def evaluate_model_with_confidence_interval(model_uri, confidence=0.9999):
         for batch in test_iterator:
             inputs, labels = batch[0].to(DEVICE), batch[1].to(DEVICE)
             outputs = model(inputs)
+
+            if isinstance(outputs, tuple):
+                outputs = outputs[0] #first element is logits
+
             _, preds = torch.max(outputs, 1)
             all_preds.extend(preds.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
@@ -58,7 +62,7 @@ def evaluate_model_with_confidence_interval(model_uri, confidence=0.9999):
     alpha = 1 - confidence
     lower_bound = np.percentile(bootstrap_accuracies, 100 * (alpha / 2))
     upper_bound = np.percentile(bootstrap_accuracies, 100 * (1 - alpha / 2))
-    mean_accuracy = np.mean(bootstrap_accuracies)
+    mean_accuracy = np.mean(sample_accuracies)
 
     return {
         "mean_accuracy": mean_accuracy,
@@ -98,25 +102,28 @@ except Exception:
 ## testing with confidence intervals and statistical significance
 
 EPSILON = 0.02 # 2% error tolerance
-CONFIDENCE = 0.9999 # 99.99% confidence level
-DELTA = 1-CONFIDENCE # 99.99% confidence level
+CONFIDENCE = 0.90 #  confidence level
+DELTA = 1-CONFIDENCE # delte to confidence level
 
 # first, check if test set is large enough
-is_sufficient = is_test_set_sufficiently_large(EPSILON, DELTA, test_iterator= test_iterator)
+is_sufficient, test_set_size, required_size = is_test_set_sufficiently_large(EPSILON, DELTA, test_iterator= test_iterator)
 if not is_sufficient:
-    print("Test set is not large enough for significance testing with the given epsilon and delta.")
-    print("Please increase the test set size or decrease the epsilon and delta values.")
+    print(f"Test set size {test_set_size} is not sufficient for epsilon={EPSILON}, delta={DELTA}. "
+          f"Required size: {required_size}.")
+    print(f"Please increase the test set size or decrease the epsilon and delta values.")
+    mlflow.log_metric("test_set_size", test_set_size)
+    mlflow.log_metric("required_size", required_size)
     exit(1)
 
 # secondly, evaluate challenger model with statistical significance
 challenger_metrics = evaluate_model_with_confidence_interval(challenger_uri, confidence=CONFIDENCE)
 print(f"Challenger model accuracy: {challenger_metrics['mean_accuracy']:.3f} "
-      f"± {challenger_metrics['epsilon']:.3f} (confidence: {challenger_metrics['confidence']})")
+      f"± {challenger_metrics['eval_epsilon']:.3f} (confidence: {challenger_metrics['confidence']})")
 
 if challenger_metrics['eval_epsilon'] > EPSILON:
-    print(f"Warning: Achieved precision ({challenger_metrics['epsilon']:.4f}) is worse than target ({EPSILON:.4f})")
+    print(f"Warning: Achieved precision ({challenger_metrics['eval_epsilon']:.4f}) is worse than target ({EPSILON:.4f})")
 
-mlflow.log_metric("challenger_epsilon", challenger_metrics['epsilon'])
+mlflow.log_metric("challenger_epsilon", challenger_metrics['eval_epsilon'])
 
 # then, evaluate production model with statistical significance if exists
 try:

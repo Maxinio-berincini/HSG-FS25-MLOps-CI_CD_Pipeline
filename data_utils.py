@@ -98,6 +98,6 @@ def estimate_required_samples(epsilon, delta):
 def is_test_set_sufficiently_large(epsilon, delta, test_iterator):
     test_set_size = len(list(test_iterator.dataset))
     required_size = estimate_required_samples(epsilon, delta)
-    return test_set_size >= required_size
+    return test_set_size >= required_size, test_set_size, required_size
 
 
