@@ -83,3 +83,21 @@ valid_iterator = data.DataLoader(valid_data,
 
 test_iterator = data.DataLoader(test_data,
                                 batch_size=BATCH_SIZE)
+
+
+def estimate_required_samples(epsilon, delta):
+    """
+    Estimate the number of samples required for (epsilon, delta) gurantees in significance testing.
+    epison: error tollerance
+    delta: 1-confidence level
+    """
+
+    ### using Hoeffding's inequality
+    return int(np.ceil((np.log(2/delta)) / (2 * epsilon**2)))
+
+def is_test_set_sufficiently_large(epsilon, delta, test_iterator):
+    test_set_size = len(list(test_iterator.dataset))
+    required_size = estimate_required_samples(epsilon, delta)
+    return test_set_size >= required_size
+
+
