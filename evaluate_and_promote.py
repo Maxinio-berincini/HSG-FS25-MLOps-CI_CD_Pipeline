@@ -144,6 +144,15 @@ if is_better:
         alias=PRODUCTION_ALIAS,
         version=challenger_mv.version
     )
+
+    # add description to model version
+    client.update_model_version(
+        name=REGISTERED_MODEL_NAME,
+        version=challenger_mv.version,
+        description=f"Challenger model accuracy: {challenger_metrics['mean_accuracy']:.3f} "
+                    f"± {challenger_metrics['eval_epsilon']:.3f} (confidence: {challenger_metrics['confidence']})"
+    )
+
     print(f"Promoted version {challenger_mv.version} to production (score {challenger_metrics['mean_accuracy']:.3f})")
     exit(0)
 else:
