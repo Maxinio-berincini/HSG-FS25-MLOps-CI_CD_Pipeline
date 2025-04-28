@@ -34,6 +34,22 @@ mlflow.artifacts.download_artifacts(
 )
 print(f"Downloaded artifacts to '{local_dir}'")
 
+# replace placeholders in app.py
+version = prod_mv.version
+description = prod_mv.description or ""
+
+with open("app_template.py", "r") as f:
+    tpl = f.read()
+
+app_py = (
+    tpl
+    .replace("{{MODEL_VERSION}}", str(version))
+    .replace("{{MODEL_DESCRIPTION}}", description.replace("\"", "\\\""))
+)
+
+with open("app.py", "w") as f:
+    f.write(app_py)
+
 # prepare files for upload
 files_to_upload = {
     "app.py": "app.py",
