@@ -38,7 +38,7 @@ print(f"Downloaded artifacts to '{local_dir}'")
 version = prod_mv.version
 description = prod_mv.description or ""
 
-with open("app_template.py", "r") as f:
+with open("app.py", "r") as f:
     tpl = f.read()
 
 app_py = (
