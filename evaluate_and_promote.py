@@ -18,7 +18,7 @@ from config import REGISTERED_MODEL_NAME, CHALLENGER_ALIAS, PRODUCTION_ALIAS
 from data_utils import is_test_set_sufficiently_large
 
 # set up device & loss
-DEVICE = torch.device("cuda")
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 CRITERION = nn.CrossEntropyLoss()
 
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
