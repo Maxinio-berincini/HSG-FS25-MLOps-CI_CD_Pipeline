@@ -6,6 +6,9 @@ from torch.serialization import add_safe_globals
 
 from model import AlexNet
 
+MODEL_VERSION = "{{MODEL_VERSION}}"
+MODEL_DESCRIPTION = "{{MODEL_DESCRIPTION}}"
+
 add_safe_globals([AlexNet, Sequential])
 
 # load model
@@ -40,8 +43,12 @@ def predict_image(image):
     confidences = {classes[i]: float(preds[0][i]) for i in range(len(classes))}
     return confidences
 
+
 demo = gr.Interface(fn=predict_image,
                     inputs=gr.Image(type="pil"),
-                    outputs=gr.Label(num_top_classes=10))
+                    outputs=gr.Label(num_top_classes=10),
+                    title=f"Image Classificator {MODEL_VERSION}",
+                    description=MODEL_DESCRIPTION,
+                    )
 
 demo.launch()
