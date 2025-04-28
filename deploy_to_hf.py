@@ -44,7 +44,7 @@ with open("app.py", "r") as f:
 app_py = (
     tpl
     .replace("{{MODEL_VERSION}}", str(version))
-    .replace("{{MODEL_DESCRIPTION}}", description.replace("\"", "\\\""))
+    .replace("{{MODEL_DESCRIPTION}}", description.replace("\"", "\\\"").replace("±", "\\u00b1"))
 )
 
 with open("app.py", "w") as f:
