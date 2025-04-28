@@ -10,16 +10,15 @@ import numpy as np
 
 # import data iterator and eval method
 from data_utils import test_iterator
-from train import evaluate
 
 # load config
 from config import REGISTERED_MODEL_NAME, CHALLENGER_ALIAS, PRODUCTION_ALIAS
 
-## load data_utils 
+## load data_utils
 from data_utils import is_test_set_sufficiently_large
 
 # set up device & loss
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DEVICE = torch.device("cuda")
 CRITERION = nn.CrossEntropyLoss()
 
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
@@ -27,7 +26,7 @@ client = MlflowClient()
 
 ## method to evaluate model with confidence intervals following ease.ml
 def evaluate_model_with_confidence_interval(model_uri, confidence=0.9999):
-    #load the model 
+    #load the model
     model = mlflow.pytorch.load_model(model_uri, map_location=DEVICE)
     model.to(DEVICE)
     model.eval()
@@ -92,18 +91,12 @@ def is_model_significantly_better(challenger_metrics, production_metrics, min_ac
 challenger_mv = client.get_model_version_by_alias(REGISTERED_MODEL_NAME, alias=CHALLENGER_ALIAS)
 challenger_uri = f"models:/{REGISTERED_MODEL_NAME}@{CHALLENGER_ALIAS}"
 
-# clear old "production" ali as
-try:
-    client.delete_registered_model_alias(REGISTERED_MODEL_NAME, alias=PRODUCTION_ALIAS)
-except Exception:
-    pass
-
 
 ## testing with confidence intervals and statistical significance
 
 EPSILON = 0.02 # 2% error tolerance
-CONFIDENCE = 0.90 #  confidence level
-DELTA = 1-CONFIDENCE # delte to confidence level
+CONFIDENCE = 0.99999 # 99.99% confidence level
+DELTA = 1-CONFIDENCE # 99.99% confidence level
 
 # first, check if test set is large enough
 is_sufficient, test_set_size, required_size = is_test_set_sufficiently_large(EPSILON, DELTA, test_iterator= test_iterator)
@@ -111,8 +104,6 @@ if not is_sufficient:
     print(f"Test set size {test_set_size} is not sufficient for epsilon={EPSILON}, delta={DELTA}. "
           f"Required size: {required_size}.")
     print(f"Please increase the test set size or decrease the epsilon and delta values.")
-    mlflow.log_metric("test_set_size", test_set_size)
-    mlflow.log_metric("required_size", required_size)
     exit(1)
 
 # secondly, evaluate challenger model with statistical significance
@@ -122,8 +113,6 @@ print(f"Challenger model accuracy: {challenger_metrics['mean_accuracy']:.3f} "
 
 if challenger_metrics['eval_epsilon'] > EPSILON:
     print(f"Warning: Achieved precision ({challenger_metrics['eval_epsilon']:.4f}) is worse than target ({EPSILON:.4f})")
-
-mlflow.log_metric("challenger_epsilon", challenger_metrics['eval_epsilon'])
 
 # then, evaluate production model with statistical significance if exists
 try:
@@ -138,15 +127,20 @@ except Exception:
 is_better, message = is_model_significantly_better(challenger_metrics, production_metrics, allow_non_sig_improvements=False)
 
 if is_better:
+
+    # clear old "production" alias
+    try:
+        client.delete_registered_model_alias(REGISTERED_MODEL_NAME, alias=PRODUCTION_ALIAS)
+    except Exception:
+        pass
+
     client.set_registered_model_alias(
         name=REGISTERED_MODEL_NAME,
         alias=PRODUCTION_ALIAS,
         version=challenger_mv.version
     )
-    mlflow.log_metric("promoted", 1)
     print(f"Promoted version {challenger_mv.version} to production (score {challenger_metrics['mean_accuracy']:.3f})")
     exit(0)
 else:
     print(f"Challenger ({challenger_metrics['mean_accuracy']:.3f}) ≤ production ({production_metrics['mean_accuracy']:.3f}), not promoted")
-    mlflow.log_metric("promoted", 0)
     exit(1)
