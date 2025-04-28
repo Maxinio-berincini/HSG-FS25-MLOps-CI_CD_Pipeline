@@ -47,7 +47,7 @@ def predict_image(image):
 demo = gr.Interface(fn=predict_image,
                     inputs=gr.Image(type="pil"),
                     outputs=gr.Label(num_top_classes=10),
-                    title=f"Image Classificator {MODEL_VERSION}",
+                    title=f"Image Classificator v{MODEL_VERSION}",
                     description=MODEL_DESCRIPTION,
                     )
 
