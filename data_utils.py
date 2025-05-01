@@ -95,9 +95,15 @@ def estimate_required_samples(epsilon, delta):
     ### using Hoeffding's inequality
     return int(np.ceil((np.log(2/delta)) / (2 * epsilon**2)))
 
-def is_test_set_sufficiently_large(epsilon, delta, test_iterator):
-    test_set_size = len(list(test_iterator.dataset))
-    required_size = estimate_required_samples(epsilon, delta)
-    return test_set_size >= required_size, test_set_size, required_size
+
+def claculate_achievable_confidence(test_set_size, epsilon):
+   
+    """
+    Calculate the achievable confidence level based on the test set size and epsilon.
+    """
+    delta = 2 * np.exp(-2 * test_set_size * epsilon**2)
+    confidence = 1 - delta
+
+    return min(max(confidence, 0.0), 1.0)  # Ensure confidence is between 0 and 1
 
 
