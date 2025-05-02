@@ -86,8 +86,8 @@ challenger_uri = f"models:/{REGISTERED_MODEL_NAME}@{CHALLENGER_ALIAS}"
 
 
 #Setup: set target epsilon and confidence level when calculating confidence intervals
-TARGET_EPSILON = 0.02  # 2% error tolerance
-TARGET_CONFIDENCE = 0.90  # 99.99% confidence level
+TARGET_EPSILON = 0.015  # target error tolerance in evaluation
+TARGET_CONFIDENCE = 0.99  # target confidence level ==> directly influences the confidence interval width
 
 
 # first, check if test set is large enough or if confidence has to be adjusted with given epsilon
@@ -131,6 +131,8 @@ try:
     prod_mv = client.get_model_version_by_alias(REGISTERED_MODEL_NAME, alias=PRODUCTION_ALIAS)
     prod_uri = f"models:/{REGISTERED_MODEL_NAME}@{PRODUCTION_ALIAS}"
     production_metrics = evaluate_model_with_confidence_interval(prod_uri, confidence=CONFIDENCE)
+    print(f"production model accuracy: {production_metrics['mean_accuracy']:.3f} "
+      f"± {production_metrics['eval_epsilon']:.3f} (confidence: {production_metrics['confidence']})")
 except Exception:
     production_metrics = {'accuracy': -1.0, 'lower_bound': -1.0, 'upper_bound': -1.0}
     print("No production model found.")
