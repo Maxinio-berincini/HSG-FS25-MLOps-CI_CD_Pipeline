@@ -20,7 +20,7 @@ with open(FILE_PATH, 'r') as f:
 
 
 # load data_utils
-from data_utils import estimate_required_samples, claculate_achievable_confidence
+from data_utils import estimate_required_samples, calculate_achievable_confidence
 
 # set up device & loss
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -99,7 +99,7 @@ if test_set_size >= required_size:
     CONFIDENCE = TARGET_CONFIDENCE
     print( f"Test set size {test_set_size} is sufficient for epsilon={EPSILON} and confidence={CONFIDENCE}.")
 else:
-    achievable_confidence = claculate_achievable_confidence(test_set_size, TARGET_EPSILON)
+    achievable_confidence = calculate_achievable_confidence(test_set_size, TARGET_EPSILON)
     bare_minimum_confidence = 0.85
 
     if achievable_confidence < bare_minimum_confidence:  # Set a minimum acceptable confidence of bare_minimum_confidence% for calculating confidence intervalls %

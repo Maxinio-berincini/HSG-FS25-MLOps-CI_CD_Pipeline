@@ -96,7 +96,7 @@ def estimate_required_samples(epsilon, delta):
     return int(np.ceil((np.log(2/delta)) / (2 * epsilon**2)))
 
 
-def claculate_achievable_confidence(test_set_size, epsilon):
+def calculate_achievable_confidence(test_set_size, epsilon):
    
     """
     Calculate the achievable confidence level based on the test set size and epsilon.

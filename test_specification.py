@@ -16,7 +16,13 @@ class TestCondition:
 
         string_parts = condition_str.split(',')
     
-        self.require_significance = bool(string_parts[1].strip())
+        req_sig_str = string_parts[1].strip()
+        if not (req_sig_str == "True" or req_sig_str == "False"):
+            raise ValueError("Second part of the condition must contain True or False after ,")
+
+        self.require_significance = req_sig_str == "True"
+
+
         self.condition = string_parts[0].strip()
         
 
@@ -28,18 +34,16 @@ class TestCondition:
         self.specified_epsilon = float(parts[1].strip())
 
         ## extract the values from the expression
+        ## currently only support '>' for our simple implementation, could be extendet to support any comparison operator
         if '>' in self.expression:
             self.compare_op = '>'
             expression_parts = self.expression.split('>')
-        elif '<' in self.expression:
-            self.compare_op = '<'
-            expression_parts = self.expression.split('<')
         else: 
-            raise ValueError("Condition must contain a comparison operator ('>' or '<')")
+            raise ValueError("Condition must contain the comparison operator ('>')")
         
         ## self.n_and_o = expression_parts[0].strip() ## actually never used in this simple implementation with only one condition format
         self.n_and_o = expression_parts[0].strip()
-        self.threshold = expression_parts[1].strip()
+        self.threshold = float(expression_parts[1].strip())
 
 
     ## Evaluate the condition based on the challenger and production metrics.
@@ -68,20 +72,20 @@ class TestCondition:
         if self.compare_op == '>':
             adjusted_threshold = self.threshold + actual_epsilon
             meets_threshold = difference > adjusted_threshold
-        else:  # '<'
-            meets_threshold = difference < adjusted_threshold
-            adjusted_threshold = self.threshold - actual_epsilon
+            
         
         # Determine result based on significance requirements
         if meets_threshold and is_significantly_better:
             return True, f"Challenger passes condition {self.condition} with statistical significance"
-        elif meets_threshold and not self.require_significance:
+        elif meets_threshold and not is_significantly_better and not self.require_significance:
             return True, f"Challenger passes condition but not statistically significant"
-        elif meets_threshold and self.require_significance:
-                return False, f"Challenger meets threshold"
+        elif meets_threshold and not is_significantly_better and self.require_significance:
+            return False, f"Challenger meets threshold but is not statistically significant"
         
-
-        return False, "Condition evaluation failed"
+        elif not meets_threshold:
+                return False, f"Condition not satisfied for challenger: {self.condition} (difference: {difference:.4f}, threshold: {adjusted_threshold:.4f})"
+        else:
+            return False, "Unexpected condition state encountered" 
     
     
 
