@@ -1,11 +1,11 @@
 
 import re
 
-## A class to sepcify test condition in the ease.ML domain specific lannguage
+## A class to specify test condition in the ease.ML domain specific lannguage
 class TestCondition:
     
     ## parse a condition string in the following format:
-    ## ' n - o > d +/- episilon ' where
+    ## ' n - o > d +/- epsilon ' where
     ## n : accuracy of the new (challenger) model
     ## o : accuracy of the old (production) model
     ## d : minimum accuracy improvement
