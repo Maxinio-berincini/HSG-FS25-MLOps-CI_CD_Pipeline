@@ -22,3 +22,7 @@ ARTIFACT_DIR = os.getenv("ARTIFACT_DIR", "model_artifacts")
 
 # Hugging Face repo
 HF_REPO_ID = os.getenv("HF_REPO_ID", "Maxinio-Berincini/HSG-FS25-MLOps-CI_CD_Pipeline")
+
+# Evaluation Parameters
+TARGET_EPSILON = 0.015  # target error tolerance in evaluation
+TARGET_CONFIDENCE = 0.99  # target confidence level ==> directly influences the confidence interval width

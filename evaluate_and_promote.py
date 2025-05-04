@@ -10,7 +10,7 @@ import numpy as np
 from data_utils import test_iterator
 
 # load config
-from config import REGISTERED_MODEL_NAME, CHALLENGER_ALIAS, PRODUCTION_ALIAS
+from config import REGISTERED_MODEL_NAME, CHALLENGER_ALIAS, PRODUCTION_ALIAS, TARGET_EPSILON, TARGET_CONFIDENCE
 
 # load test condition specification
 from test_specification import TestCondition
@@ -83,12 +83,6 @@ def evaluate_model_with_confidence_interval(model_uri, confidence=0.9999):
 # get challenger alias
 challenger_mv = client.get_model_version_by_alias(REGISTERED_MODEL_NAME, alias=CHALLENGER_ALIAS)
 challenger_uri = f"models:/{REGISTERED_MODEL_NAME}@{CHALLENGER_ALIAS}"
-
-
-#Setup: set target epsilon and confidence level when calculating confidence intervals
-TARGET_EPSILON = 0.015  # target error tolerance in evaluation
-TARGET_CONFIDENCE = 0.99  # target confidence level ==> directly influences the confidence interval width
-
 
 # first, check if test set is large enough or if confidence has to be adjusted with given epsilon
 test_set_size = len(list(test_iterator.dataset))
