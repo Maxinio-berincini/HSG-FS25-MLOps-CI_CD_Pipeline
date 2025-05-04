@@ -20,6 +20,9 @@ from config import (
     CHALLENGER_ALIAS,
     CONDA_ENV_FILE,
     ARTIFACT_DIR,
+    LEARNING_RATE,
+    EPOCHS,
+    OUTPUT_DIM,
 )
 # import data iterator and model
 from data_utils import train_iterator, valid_iterator, test_iterator
@@ -133,7 +136,6 @@ def epoch_time(start_time, end_time):
 
 def main():
     # model and parameter initialization
-    OUTPUT_DIM = 10
     model = AlexNet(OUTPUT_DIM)
     model.apply(initialize_parameters)
     print(f'The model has {count_parameters(model):,} trainable parameters')
@@ -143,11 +145,9 @@ def main():
     criterion = nn.CrossEntropyLoss()
     model = model.to(device)
 
-    FOUND_LR = 1e-3
-    optimizer = optim.Adam(model.parameters(), lr=FOUND_LR)
+    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
     # train loop variables
-    EPOCHS = 3
     best_valid_loss = float('inf')
     best_model_path = None
 
@@ -157,7 +157,7 @@ def main():
 
         # Log hyperparameters
         mlflow.log_param("epochs", EPOCHS)
-        mlflow.log_param("learning_rate", FOUND_LR)
+        mlflow.log_param("learning_rate", LEARNING_RATE)
         mlflow.log_param("optimizer", "Adam")
         mlflow.log_param("batch_size", train_iterator.batch_size)
 

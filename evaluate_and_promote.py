@@ -4,18 +4,23 @@ import os
 import torch
 from mlflow.tracking import MlflowClient
 from torch import nn
-
-import random
 import numpy as np
 
 # import data iterator and eval method
 from data_utils import test_iterator
 
 # load config
-from config import REGISTERED_MODEL_NAME, CHALLENGER_ALIAS, PRODUCTION_ALIAS
+from config import REGISTERED_MODEL_NAME, CHALLENGER_ALIAS, PRODUCTION_ALIAS, TARGET_EPSILON, TARGET_CONFIDENCE
+
+# load test condition specification
+from test_specification import TestCondition
+FILE_PATH = "test_condition.txt"
+with open(FILE_PATH, 'r') as f:
+    CONDITION_SPECIFICATION = f.readline().strip()
+
 
 # load data_utils
-from data_utils import is_test_set_sufficiently_large
+from data_utils import estimate_required_samples, calculate_achievable_confidence
 
 # set up device & loss
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -75,41 +80,38 @@ def evaluate_model_with_confidence_interval(model_uri, confidence=0.9999):
     }
 
 
-# method to compare statistics to be significant
-def is_model_significantly_better(challenger_metrics, production_metrics, min_acc_improvement=0.01,
-                                  allow_non_sig_improvements=False):
-    effective_min_improvent = max(min_acc_improvement, 2 * challenger_metrics['eval_epsilon'])
-
-    # Check if the confidence intervals overlap
-    if challenger_metrics['lower_bound'] > production_metrics['upper_bound']:
-        return True, "Challenger is significantly better"
-
-    if challenger_metrics['mean_accuracy'] - production_metrics['mean_accuracy'] > effective_min_improvent:
-        return True, "Challenger is better however not significant" if allow_non_sig_improvements else False, "Challenger is not significantly better"
-
-    return False, "Challenger is not significantly better than production"
-
-
 # get challenger alias
 challenger_mv = client.get_model_version_by_alias(REGISTERED_MODEL_NAME, alias=CHALLENGER_ALIAS)
 challenger_uri = f"models:/{REGISTERED_MODEL_NAME}@{CHALLENGER_ALIAS}"
 
-# testing with confidence intervals and statistical significance
+# first, check if test set is large enough or if confidence has to be adjusted with given epsilon
+test_set_size = len(list(test_iterator.dataset))
+required_size = estimate_required_samples(TARGET_EPSILON, 1 - TARGET_CONFIDENCE)
 
-EPSILON = 0.02  # 2% error tolerance
-CONFIDENCE = 0.90  # 99.99% confidence level
-DELTA = 1 - CONFIDENCE  # 99.99% confidence level
+if test_set_size >= required_size:
+    EPSILON = TARGET_EPSILON
+    CONFIDENCE = TARGET_CONFIDENCE
+    print( f"Test set size {test_set_size} is sufficient for epsilon={EPSILON} and confidence={CONFIDENCE}.")
+else:
+    achievable_confidence = calculate_achievable_confidence(test_set_size, TARGET_EPSILON)
+    bare_minimum_confidence = 0.85
 
-# first, check if test set is large enough
-is_sufficient, test_set_size, required_size = is_test_set_sufficiently_large(EPSILON, DELTA,
-                                                                             test_iterator=test_iterator)
-if not is_sufficient:
-    print(f"Test set size {test_set_size} is not sufficient for epsilon={EPSILON}, delta={DELTA}. "
-          f"Required size: {required_size}.")
-    print(f"Please increase the test set size or decrease the epsilon and delta values.")
-    exit(1)
+    if achievable_confidence < bare_minimum_confidence:  # Set a minimum acceptable confidence of bare_minimum_confidence% for calculating confidence intervalls %
+        print(f"Test set size {test_set_size} provides only {achievable_confidence:.4f} confidence " 
+              f"with epsilon={TARGET_EPSILON}. This is below minimum acceptable level ({bare_minimum_confidence:.4f}).")
+        print(f"Required size for target confidence: {required_size}")
+        exit(1)
 
-# secondly, evaluate challenger model with statistical significance
+    else:
+        EPSILON = TARGET_EPSILON
+        CONFIDENCE = achievable_confidence
+        print(f"Warning: Using reduced confidence {CONFIDENCE:.4f} instead of target {TARGET_CONFIDENCE}")
+        print(f"To achieve target confidence, increase test set from {test_set_size} to {required_size} samples")
+
+
+
+# secondly, evaluate challenger model with statistical confidence interval
+
 challenger_metrics = evaluate_model_with_confidence_interval(challenger_uri, confidence=CONFIDENCE)
 print(f"Challenger model accuracy: {challenger_metrics['mean_accuracy']:.3f} "
       f"± {challenger_metrics['eval_epsilon']:.3f} (confidence: {challenger_metrics['confidence']})")
@@ -118,21 +120,24 @@ if challenger_metrics['eval_epsilon'] > EPSILON:
     print(
         f"Warning: Achieved precision ({challenger_metrics['eval_epsilon']:.4f}) is worse than target ({EPSILON:.4f})")
 
-# then, evaluate production model with statistical significance if exists
+# then, evaluate production model with statistical confidence interval
 try:
     prod_mv = client.get_model_version_by_alias(REGISTERED_MODEL_NAME, alias=PRODUCTION_ALIAS)
     prod_uri = f"models:/{REGISTERED_MODEL_NAME}@{PRODUCTION_ALIAS}"
     production_metrics = evaluate_model_with_confidence_interval(prod_uri, confidence=CONFIDENCE)
+    print(f"production model accuracy: {production_metrics['mean_accuracy']:.3f} "
+      f"± {production_metrics['eval_epsilon']:.3f} (confidence: {production_metrics['confidence']})")
 except Exception:
     production_metrics = {'accuracy': -1.0, 'lower_bound': -1.0, 'upper_bound': -1.0}
     print("No production model found.")
 
-# compare models with statistical guarantees
-is_better, message = is_model_significantly_better(challenger_metrics, production_metrics,
-                                                   allow_non_sig_improvements=False)
+# Evaluate the specified test condition
+condition = TestCondition(CONDITION_SPECIFICATION)
+is_valid, message = condition.evaluate(challenger_metrics, production_metrics)
 
-if is_better:
 
+if is_valid:
+    print(f"Challenger model meets the condition: {message}")
     # clear old "production" alias
     try:
         client.delete_registered_model_alias(REGISTERED_MODEL_NAME, alias=PRODUCTION_ALIAS)
