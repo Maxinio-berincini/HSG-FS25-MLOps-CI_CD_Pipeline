@@ -5,7 +5,7 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from data_utils import estimate_required_samples, calculate_achievable_confidence
+from scripts.utils.data_utils import estimate_required_samples, calculate_achievable_confidence
 
 
 class TestStatisticalEvaluation(unittest.TestCase):

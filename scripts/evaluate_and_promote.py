@@ -7,20 +7,27 @@ from torch import nn
 import numpy as np
 
 # import data iterator and eval method
-from data_utils import test_iterator
+from scripts.utils.data_utils import test_iterator
 
 # load config
-from config import REGISTERED_MODEL_NAME, CHALLENGER_ALIAS, PRODUCTION_ALIAS, TARGET_EPSILON, TARGET_CONFIDENCE
+from scripts.utils.config import (
+    REGISTERED_MODEL_NAME,
+    CHALLENGER_ALIAS,
+    PRODUCTION_ALIAS,
+    TARGET_EPSILON,
+    TARGET_CONFIDENCE,
+    PROJECT_ROOT
+)
 
 # load test condition specification
-from test_specification import TestCondition
-FILE_PATH = "test_condition.txt"
+from scripts.utils.test_specification import TestCondition
+FILE_PATH = PROJECT_ROOT / "configs" / "test_condition.txt"
 with open(FILE_PATH, 'r') as f:
     CONDITION_SPECIFICATION = f.readline().strip()
 
 
 # load data_utils
-from data_utils import estimate_required_samples, calculate_achievable_confidence
+from scripts.utils.data_utils import estimate_required_samples, calculate_achievable_confidence
 
 # set up device & loss
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")

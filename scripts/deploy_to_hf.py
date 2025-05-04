@@ -3,11 +3,12 @@ import mlflow
 from mlflow.tracking import MlflowClient
 from huggingface_hub import HfApi
 
-from config import (
+from scripts.utils.config import (
     REGISTERED_MODEL_NAME,
     PRODUCTION_ALIAS,
     HF_REPO_ID,
     ARTIFACT_DIR,
+    PROJECT_ROOT
 )
 
 HF_TOKEN = os.environ["HF_TOKEN"]
@@ -38,7 +39,7 @@ print(f"Downloaded artifacts to '{local_dir}'")
 version = prod_mv.version
 description = prod_mv.description or ""
 
-with open("app.py", "r") as f:
+with open(PROJECT_ROOT / "app" / "app.py", "r") as f:
     tpl = f.read()
 
 app_py = (
@@ -47,13 +48,13 @@ app_py = (
     .replace("{{MODEL_DESCRIPTION}}", description.replace("\"", "\\\"").replace("±", "\\u00b1"))
 )
 
-with open("app.py", "w") as f:
+with open(PROJECT_ROOT / "app" / "app.py", "w") as f:
     f.write(app_py)
 
 # prepare files for upload
 files_to_upload = {
-    "app.py": "app.py",
-    "model.py": "model.py",
+    PROJECT_ROOT / "app" / "app.py": "app/app.py",
+    PROJECT_ROOT / "scripts" / "utils" / "model.py": "scripts/utils/model.py",
     os.path.join(local_dir, "data", "model.pth"): "model_artifacts/model.pth",
 }
 

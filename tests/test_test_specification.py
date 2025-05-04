@@ -1,12 +1,11 @@
 import unittest
-from unittest.mock import patch
 
 # Import your module
 # Adjust the import as needed based on your project structure
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from test_specification import TestCondition
+from scripts.utils.test_specification import TestCondition
 
 class TestConditionClass(unittest.TestCase):
     def test_init_valid_condition(self):

@@ -13,7 +13,7 @@ from torch.optim.lr_scheduler import _LRScheduler
 from tqdm.notebook import tqdm, trange
 
 # load config
-from config import (
+from scripts.utils.config import (
     EXPERIMENT_NAME,
     REGISTERED_MODEL_NAME,
     RUN_NAME,
@@ -25,8 +25,8 @@ from config import (
     OUTPUT_DIM,
 )
 # import data iterator and model
-from data_utils import train_iterator, valid_iterator, test_iterator
-from model import AlexNet, count_parameters, initialize_parameters
+from scripts.utils.data_utils import train_iterator, valid_iterator, test_iterator
+from scripts.utils.model import AlexNet, count_parameters, initialize_parameters
 
 # configure MLflow
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))

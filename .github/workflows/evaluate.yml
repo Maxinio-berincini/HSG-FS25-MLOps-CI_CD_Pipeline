@@ -35,7 +35,7 @@ jobs:
           MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_USERNAME }}
           MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
         run: |
-          python evaluate_and_promote.py
+          python scripts/evaluate_and_promote.py
         continue-on-error: true
         id: eval_step
 

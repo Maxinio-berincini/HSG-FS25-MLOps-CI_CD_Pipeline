@@ -1,19 +1,25 @@
+import os
+
 import gradio as gr
 import torch
 import torchvision.transforms as T
 from torch.nn import Sequential
 from torch.serialization import add_safe_globals
 
-from model import AlexNet
+from scripts.utils.model import AlexNet
 
 MODEL_VERSION = "{{MODEL_VERSION}}"
 MODEL_DESCRIPTION = "{{MODEL_DESCRIPTION}}"
+
+# dynamically get directory
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "..", "model_artifacts", "model.pth")
 
 add_safe_globals([AlexNet, Sequential])
 
 # load model
 model = torch.load(
-    "model_artifacts/model.pth",
+    MODEL_PATH,
     map_location=torch.device("cpu"),
     weights_only=False
 )

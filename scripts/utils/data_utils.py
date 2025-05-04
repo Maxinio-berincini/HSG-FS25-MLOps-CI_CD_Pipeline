@@ -7,7 +7,7 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 
 # load config
-from config import (
+from scripts.utils.config import (
     BATCH_SIZE,
     VALID_RATIO,
     SEED,
