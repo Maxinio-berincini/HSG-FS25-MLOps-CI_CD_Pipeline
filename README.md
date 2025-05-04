@@ -70,8 +70,6 @@ HF_TOKEN= <your HuggingFace Token>
 
 ---
 
----
-
 ## Workflow Overview
 
 Below is the high-level flow of our pipeline.
