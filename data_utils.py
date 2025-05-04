@@ -6,7 +6,14 @@ import torch.utils.data as data
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 
-SEED = 1234
+# load config
+from config import (
+    BATCH_SIZE,
+    VALID_RATIO,
+    SEED,
+    DATA_ROOT,
+)
+
 
 random.seed(SEED)
 np.random.seed(SEED)
@@ -14,9 +21,8 @@ torch.manual_seed(SEED)
 torch.cuda.manual_seed(SEED)
 torch.backends.cudnn.deterministic = True
 
-ROOT = 'data'
 
-train_data = datasets.CIFAR10(root=ROOT,
+train_data = datasets.CIFAR10(root=DATA_ROOT,
                               train=True,
                               download=True)
 
@@ -39,17 +45,16 @@ test_transforms = transforms.Compose([
     transforms.Normalize(mean=means, std=stds)
 ])
 
-train_data = datasets.CIFAR10(ROOT,
+train_data = datasets.CIFAR10(DATA_ROOT,
                               train=True,
                               download=True,
                               transform=train_transforms)
 
-test_data = datasets.CIFAR10(ROOT,
+test_data = datasets.CIFAR10(DATA_ROOT,
                              train=False,
                              download=True,
                              transform=test_transforms)
 
-VALID_RATIO = 0.9
 n_train_examples = int(len(train_data) * VALID_RATIO)
 n_valid_examples = len(train_data) - n_train_examples
 
@@ -71,8 +76,6 @@ def normalize_image(image):
     image.add_(-image_min).div_(image_max - image_min + 1e-5)
     return image
 
-
-BATCH_SIZE = 256
 
 train_iterator = data.DataLoader(train_data,
                                  shuffle=True,
