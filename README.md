@@ -74,9 +74,10 @@ HF_TOKEN= <your HuggingFace Token>
 
 Below is the high-level flow of our pipeline.
 
-```
-![Pipeline Workflow](docs/pipeline_workflow.png)
-```
+
+![Pipeline Workflow](docs/pipeline_workflow1.png)
+![Pipeline Workflow](docs/pipeline_workflow2.png)
+
 
 
 1. **Local Train**
