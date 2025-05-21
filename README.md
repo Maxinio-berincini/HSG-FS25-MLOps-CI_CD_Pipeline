@@ -72,10 +72,13 @@ HF_TOKEN= <your HuggingFace Token>
 
 ## Workflow Overview
 
-Below is the high-level flow of our pipeline.
+Below is the high-level overview of our pipeline.
 
 
 ![Pipeline Workflow](docs/pipeline_workflow1.png)
+
+---
+
 ![Pipeline Workflow](docs/pipeline_workflow2.png)
 
 
