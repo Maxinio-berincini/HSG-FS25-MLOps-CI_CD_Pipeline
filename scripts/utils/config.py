@@ -12,8 +12,8 @@ load_dotenv(PROJECT_ROOT / "configs" / ".env")
 # set global experiment config
 
 # experiment and model names
-EXPERIMENT_NAME = os.getenv("MLFLOW_EXPERIMENT_NAME", "alexnet_auto_deploy_test-1")
-REGISTERED_MODEL_NAME = os.getenv("MLFLOW_MODEL_NAME", "alexnet_model-1")
+EXPERIMENT_NAME = os.getenv("MLFLOW_EXPERIMENT_NAME", "alexnet_auto_deploy_demo")
+REGISTERED_MODEL_NAME = os.getenv("MLFLOW_MODEL_NAME", "alexnet_model-demo")
 RUN_NAME = os.getenv("MLFLOW_RUN_NAME", "challenger")
 
 # model registry aliases
@@ -29,7 +29,7 @@ HF_REPO_ID = os.getenv("HF_REPO_ID", "Maxinio-Berincini/HSG-FS25-MLOps-CI_CD_Pip
 
 # Training Parameters
 LEARNING_RATE = os.getenv("LEARNING_RATE", 0.001)
-EPOCHS = os.getenv("NUM_EPOCHS", 10)
+EPOCHS = os.getenv("NUM_EPOCHS", 1)
 
 # Data Parameters
 OUTPUT_DIM = os.getenv("OUTPUT_DIM", 10)  # number of classes in the dataset
