@@ -36,4 +36,4 @@ jobs:
           MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          python -m scripts.deploy_to_hf.py
+          python -m scripts.deploy_to_hf
