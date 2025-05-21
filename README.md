@@ -134,6 +134,12 @@ python scripts/evaluate_and_promote.py
 
 * Computes bootstrap CIs on test set
 * Checks DSL test condition (`configs/test_condition.txt`)
+* Test condition is specified in the following format:  
+  - `'n - o > d +/- epsilon'` where:  
+    - `n`: accuracy of the new (challenger) model  
+    - `o`: accuracy of the old (production) model  
+    - `d`: minimum accuracy improvement  
+    - `epsilon`: the half-width of the confidence interval
 * If passed, aliases the challenger as `production` in MLflow
 
 ### 4. Deploy to Hugging Face
