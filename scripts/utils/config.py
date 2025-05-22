@@ -29,7 +29,7 @@ HF_REPO_ID = os.getenv("HF_REPO_ID", "Maxinio-Berincini/HSG-FS25-MLOps-CI_CD_Pip
 
 # Training Parameters
 LEARNING_RATE = os.getenv("LEARNING_RATE", 0.001)
-EPOCHS = os.getenv("NUM_EPOCHS", 2)
+EPOCHS = os.getenv("NUM_EPOCHS", 8)
 
 # Data Parameters
 OUTPUT_DIM = os.getenv("OUTPUT_DIM", 10)  # number of classes in the dataset
